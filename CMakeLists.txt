@@ -113,27 +113,12 @@ catkin_package(
 include_directories(ros_follower_node  ${catkin_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
 
 
-## Declare a C++ library
-# add_library(ros_follower_node
-#   src/${PROJECT_NAME}/ros_follower_node.cpp
-# )
-
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
 # add_dependencies(ros_follower_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-## Declare a C++ executable
-#add_executable(ros_follower_node_node src/follower_node.py)
 
-## Add cmake target dependencies of the executable
-## same as for the library above
-# add_dependencies(ros_follower_node_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-
-## Specify libraries to link a library or executable target against
-#target_link_libraries(
-#   ${catkin_LIBRARIES}  ${OpenCV_LIBRARIES}
-#)
 
 #############
 ## Install ##
@@ -186,4 +171,5 @@ include_directories(ros_follower_node  ${catkin_INCLUDE_DIRS} ${OpenCV_INCLUDE_D
 
 catkin_install_python(PROGRAMS
     nodes/follower_node.py
+    nodes/kinect_follower_node.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})

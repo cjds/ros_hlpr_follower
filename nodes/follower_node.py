@@ -5,54 +5,49 @@ import roslib
 roslib.load_manifest('ros_follower_node')
 import sys
 import rospy
-import cv2
+import tf 
 from std_msgs.msg import String
-from geometry_msg import Twist
+from geometry_msgs.msg import Twist,Pose,PoseStamped
 from sensor_msgs.msg import Image
-from cv_bridge import CvBridge, CvBridgeError
-
 
 class follower_node:
 
   def __init__(self):
-    self.image_pub = rospy.Publisher("image_topic_2",Image)
+    #publisher
+    self.teleop_pub = rospy.Publisher("/vector/teleop/cmd_vel",Twist)
 
-    self.bridge = CvBridge()
-    self.image_sub = rospy.Subscriber("image_topic",Image,self.callback)
-    self.teleop_pub = rospy.Publisher("teleop_cmd_vel",Twist)
+    #frames
+
+    #subscribers
+    self.image_teleop_sub = rospy.Subscriber("/person_tracker",PoseStamped)
     rospy.init_node('follower_node')
+    self.tf = tf.TransformListener()
+
     r = rospy.Rate(10) # 10hz
     while not rospy.is_shutdown():
-      twist=Twist()
-      pub.publish(twist)
       r.sleep()
 
-  def callback(self,data):
-    try:
-      cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
-    except CvBridgeError as e:
-      print(e)
+  def keyboard_callback(self,data):
+    pass
 
-    (rows,cols,channels) = cv_image.shape
-    if cols > 60 and rows > 60 :
-      cv2.circle(cv_image, (50,50), 10, 255)
+  def pose_callback(self,data):
+    if self.tf.frameExists(self.header.frame_id):
+      twist=Twist()
+      twist.linear.x=0.1
+      twist.linear.y=0.0
+      twist.linear.z=0.0
+      self.teleop_pub.publish(twist)
+    else:
+      rospy.logwarn("Cannot find the frame %s", self.header.frame_id)
 
-    cv2.imshow("Image window", cv_image)
-    cv2.waitKey(3)
-
-    try:
-      self.image_pub.publish(self.bridge.cv2_to_imgmsg(cv_image, "bgr8"))
-    except CvBridgeError as e:
-      print(e)
 
 def main(args):
   ic = follower_node()
-  rospy.init_node('follwer_node', anonymous=True)
+  rospy.init_node('follower_node', anonymous=True)
   try:
     rospy.spin()
   except KeyboardInterrupt:
     print("Shutting down")
-  cv2.destroyAllWindows()
 
 if __name__ == '__main__':
     main(sys.argv)
