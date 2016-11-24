@@ -20,18 +20,24 @@ class kinect_follower:
 
 
     #publisher
-    self.person_tracker_pub = rospy.Publisher("/person_tracker",PoseStamped)
+    self.person_tracker_pub = rospy.Publisher("/person_tracker",PoseStamped,queue_size=10)
 
     #subscribers
     self.image_sub = rospy.Subscriber("image_topic",Image,self.image_received) #
-    self.teleop_pub = rospy.Publisher("/vector/teleop/cmd_vel",Twist)
+    self.teleop_pub = rospy.Publisher("/vector/teleop/cmd_vel",Twist,queue_size=10)
     rospy.init_node('kinect_follower_node')
     self.tf = tf.TransformListener()
-
+    self.pose= PoseStamped()
     r = rospy.Rate(10) # 10hz
     while not rospy.is_shutdown():
-    	#probably publish a useful pose here
-      	r.leep()
+		#probably publish a useful pose here
+		self.pose.header.frame_id="/kinect_rgb_optical_frame"
+		self.pose.header.stamp = rospy.get_rostime()
+		self.pose.pose.position.x=1
+		self.pose.pose.position.y=0
+		self.pose.pose.position.z=1
+		self.person_tracker_pub.publish(self.pose)
+		r.sleep()
 
 
   def image_received(self,data):

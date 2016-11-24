@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 from __future__ import print_function
-
 import roslib
 roslib.load_manifest('ros_follower_node')
 import sys
 import rospy
 import tf 
+import math
 from std_msgs.msg import String
 from geometry_msgs.msg import Twist,Pose,PoseStamped
 from sensor_msgs.msg import Image
@@ -17,9 +17,9 @@ class follower_node:
     self.teleop_pub = rospy.Publisher("/vector/teleop/cmd_vel",Twist)
 
     #frames
-
+    self.radius= 5.0 #radius at which its considered acceptable to move
     #subscribers
-    self.image_teleop_sub = rospy.Subscriber("/person_tracker",PoseStamped)
+    self.image_teleop_sub = rospy.Subscriber("/person_tracker",PoseStamped,self.person_tracker_callback)
     rospy.init_node('follower_node')
     self.tf = tf.TransformListener()
 
@@ -27,18 +27,28 @@ class follower_node:
     while not rospy.is_shutdown():
       r.sleep()
 
-  def keyboard_callback(self,data):
-    pass
 
-  def pose_callback(self,data):
-    if self.tf.frameExists(self.header.frame_id):
+  def person_tracker_callback(self,data):
+    if self.tf.frameExists(data.header.frame_id):
+      #find how far the person is from you. 
+      #If he is far enough move in his direction
+
+      pose=self.tf.transformPose("/kinect_rgb_optical_frame",data)
       twist=Twist()
-      twist.linear.x=0.1
-      twist.linear.y=0.0
-      twist.linear.z=0.0
-      self.teleop_pub.publish(twist)
+      #I assume that I do not care about the y dimension which is the person's height
+      if math.hypot(pose.pose.position.x,pose.pose.position.z) > self.radius:
+        #we are not at the goal time to move there
+        twist.linear.x=0.1
+        twist.linear.y=0.0
+        twist.linear.z=0.0
+        self.teleop_pub.publish(twist)
+      else:
+        twist.linear.x=0.0
+        twist.linear.y=0.0
+        twist.linear.z=0.0
+        self.teleop_pub.publish(twist)
     else:
-      rospy.logwarn("Cannot find the frame %s", self.header.frame_id)
+      rospy.logwarn("Cannot find the frame %s", data.header.frame_id)
 
 
 def main(args):
