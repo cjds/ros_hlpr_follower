@@ -117,6 +117,7 @@ class StateTree:
   					current_node=L[j]
   			else:
   				self.Q.put(L[j])
+  	#algorithm won't go here yet: TODO put hard time limits for a decision
   	self.time=get_time()
   	return "FAIL"
   '''
@@ -127,6 +128,7 @@ class StateTree:
 
   def compare(self,a,b):
   	print(a)
+  	print ("HII!!!")
   	return -1
   	
   	'''
@@ -139,8 +141,6 @@ class StateTree:
   def goal(self,p,q):
   	return 0
 
-  def utility(self,node):
-  	return 0
 
   def getNodes(self):
   	nodes=[]
