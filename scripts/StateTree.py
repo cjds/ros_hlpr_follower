@@ -6,20 +6,34 @@ import sys
 import rospy
 import tf 
 import math
+from  Information import *
+from CollisionChecking import *
 from std_msgs.msg import String
 from geometry_msgs.msg import Twist,Pose,PoseStamped
 from sensor_msgs.msg import Image
+import numpy as np
+import Queue
+import time
 
+def get_time():
+	return time.time()
 
 class Node:
-	def __init__(self,p,q):
-		self.p=Information()
-  		self.q=Information()
+	def __init__(self,q):
+		
+  		self.robot=q
   		self.children=[]
+  		self.depth=0
+  		self.parent=None
 
   	def addChild(self,node):
+  		node.depth=self.depth+1
+  		node.parent=self
   		self.children.append(node)
 
+  	def getUtility(self):
+  		#@TODO 
+  		return 0
 
 class StateTree:
 
@@ -28,7 +42,7 @@ class StateTree:
   '''
   def __init__(self, collision_checker):
 
-  	self.collision_check=collision_checker
+  	self.collision_checker=collision_checker
  
  	self.bmax=3
   	self.dmax=2
@@ -36,36 +50,89 @@ class StateTree:
   	self.p=Information()
   	self.q=Information()
 
-  	self.root=Node()
+  	self.root=Node(self.q)
 
-  	self.Q= PriorityQueue()
+  	self.Q= Queue.PriorityQueue()
 
-  def getAvailableActions(q):
-  	pass
+  	#velocity control parameters
+  	self.max_velocity_x=0.5
+  	self.max_velocity_y=0.5
+  	self.max_velocity_yaw= 0.5
 
-  def plan(self,q):
-  	current_node=[]
+	self.step_velocity=0.001
 
-  	self.Q.put(q)
+	self.max_accel=0.5
+	self.max_accel_yaw=1.0
+	self.time= get_time()
+
+	self.current_x_velocity=0.0
+	self.current_y_velocity=0.0
+	self.current_yaw_velocity=0.0
+
+  def getAvailableActions(self,node):
+  	q=node.robot
+  	dt= get_time() - self.time
+  	new_nodes=[]
+  	#instead of this based on current velocity figure out which is acceptable
+  	for v_x in np.arange(q.v_x-self.max_accel*dt,q.v_x+self.max_accel*dt,self.step_velocity):
+  		for v_y in np.arange(q.v_y-self.max_accel*dt,q.v_y+self.max_accel*dt,self.step_velocity):
+  			for v_theta in np.arange(q.w-self.max_accel_yaw*dt,q.w+self.max_accel_yaw*dt,self.step_velocity):
+  				x=q.x +v_x*dt+ math.cos(q.theta)*v_theta*dt
+  				y=q.y +v_y*dt+ math.sin(q.theta)*v_theta*dt
+  				theta=q.theta + v_theta*dt
+  				if not (self.collision_checker.collision_check(x,y,theta)):
+  					n=Node(Information(x,y,theta, v_x,v_y,v_theta))
+  					node.addChild(n)
+					new_nodes.append(n)
+  	#check for collision
+
+  	return new_nodes
+
+  	
+
+  def backtrace(self,node):
+  	while node.parent!=None:
+  		node=node.parent
+  	return node
+
+
+  def plan(self):
+  	#WE SHOULD REdefine the root
+  	current_node=self.root
+  	steps=[]
+  	self.Q.put(self.root)
 
   	while True:
   		if self.Q.empty():
-  			return self.backtrace(qbest)
-  		current_node.append(Q.get())
-  		L=[]
-  		for action in self.getAvailableActions(q):
-  			L.append(action)
+  			self.time=get_time()
+  			return self.backtrace(current_node)
+  		steps.append(self.Q.get())
+  		L= self.getAvailableActions(steps[-1])
+  		print(L)
+  		L.sort(self.compare)
 
-		L=(sorted(L, key=lambda x: x.modified, reverse=True))  	
+  		for j in range(self.bmax if len(L)>self.bmax else len(L)):
+  			if L[j].depth==self.dmax:
+  				if L[j].getUtility()>current_node.getUtility():
+  					current_node=L[j]
+  			else:
+  				self.Q.put(L[j])
+  	self.time=get_time()
+  	return "FAIL"
   '''
   	Update this tree 
   '''
   def updateTree(self):
   	pass
 
-  '''
-  	Update the values in the tree by recreating the root
-  '''
+  def compare(self,a,b):
+  	print(a)
+  	return -1
+  	
+  	'''
+  		Update the values in the tree by recreating the root
+  	'''
+
   def resolveTree(self):
   	pass
 
@@ -75,9 +142,9 @@ class StateTree:
   def utility(self,node):
   	return 0
 
-  def getNodes(sel.f):
+  def getNodes(self):
   	nodes=[]
-  	for
+  	
 
 
 

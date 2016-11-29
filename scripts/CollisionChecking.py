@@ -27,7 +27,7 @@ class CollisionChecking:
   def laser_scan_data(self,data):
   	self.laser_scan_data=data
 
-  def collision_check():
+  def collision_check(self,x,y,theta):
   	return False
 
 

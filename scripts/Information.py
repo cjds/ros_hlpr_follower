@@ -15,12 +15,14 @@ class Information:
   '''
 	This is the information class. It has the base tuple that the other classes use
   '''
-  def __init__(self):
+  def __init__(self,x=0,y=0,theta=0,v_x=0,v_y=0,w=0):
 
   	self.x=0
   	self.y=0
 
   	self.theta=0
 
-  	self.v=0
+  	self.v_x=0
+	self.v_y=0
+  	self.w=0
 
