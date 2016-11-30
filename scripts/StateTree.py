@@ -32,15 +32,23 @@ class Node:
   		self.children.append(node)
 
   	def getUtility(self,person_information,collision_checker):
-  		beta_value= 0.95^^self.depth 
+  		beta_value= 0.95**self.depth 
   		#goal weight
   		w_g=0.6
+  		goal_cost = goal_function(person_information)
   		#obstacle weight
   		w_o=0.4
+  		costmap_cost=collision_checker.collision_check(self.robot.x,self.robot.y,self.robot.theta)
+  		#TODO add smoothness parameter
   		#smoothness weight
   		w_v= 0.5
-  		return 0
+  		return (w_g*goal_cost + w_o*costmap_cost)
 
+  	def goal_function(self,person):
+  		#distance between the two as a first pass
+  		#TODO improve goal
+  		k=5.0
+  		return 1-math.exp(/(math.pow(person.x - robot.x,2)+math.pow(person.y - robot.y,2)))-
 class StateTree:
 
   '''
@@ -118,7 +126,7 @@ class StateTree:
 
   		for j in range(self.bmax if len(L)>self.bmax else len(L)):
   			if L[j].depth==self.dmax:
-  				if L[j].getUtility(self.p)>current_node.getUtility(self.p):
+  				if L[j].getUtility(self.p,self.collision_checker)>current_node.getUtility(self.p,self.collision_checker):
   					current_node=L[j]
   			else:
   				self.Q.put(L[j])
@@ -132,8 +140,8 @@ class StateTree:
   	pass
 
   def compare(self,a,b):
-  	a_utility=a.getUtility(self.p) 
-  	b_utility=b.getUtility(self.p)
+  	a_utility=a.getUtility(self.p,self.collision_checker) 
+  	b_utility=b.getUtility(self.p,self.collision_checker)
   	if a_utility>b_utility:
   		return 1
   	elif a_utility==b_utility:

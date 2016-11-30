@@ -17,19 +17,16 @@ class CollisionChecking:
 	This is the information class. It has the base tuple that the other classes use
   '''
   def __init__(self, buffer, map_size):
-
     self.map_size=map_size
-  	self.costmap=np.zeros((map_size,map_size)) #the YML file
-
-  	self.laser_scan_data=0 #laser scan data
-
-  	self.buffer=buffer #this is the buffer around the objects 
+    self.costmap=np.zeros((map_size,map_size)) #the YML file
+    self.laser_scan_data=0 #laser scan data
+    self.buffer=buffer #this is the buffer around the objects 
 
 
   def laser_scan_data(self,data):
-  	self.laser_scan_data=data
+    self.laser_scan_data=data
     kernel_size=self.buffer*2
-    center_max=10.0   
+    center_max=1.0   
     self.costmap=np.zeros((self.map_size,map_size)) #the YML file
 
     #convert laser scan to data

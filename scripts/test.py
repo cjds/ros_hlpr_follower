@@ -28,7 +28,7 @@ def predict_next_move():
 
 #rospy.init_node('follower_node')
 q=Information(1,2,0,1,0)
-c=CollisionChecking(1)
+c=CollisionChecking(1,100)
 st= StateTree(c)
 time.sleep(0.01)
 st.plan()
