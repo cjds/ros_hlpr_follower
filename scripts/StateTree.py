@@ -31,8 +31,14 @@ class Node:
   		node.parent=self
   		self.children.append(node)
 
-  	def getUtility(self):
-  		#@TODO 
+  	def getUtility(self,person_information,collision_checker):
+  		beta_value= 0.95^^self.depth 
+  		#goal weight
+  		w_g=0.6
+  		#obstacle weight
+  		w_o=0.4
+  		#smoothness weight
+  		w_v= 0.5
   		return 0
 
 class StateTree:
@@ -59,7 +65,7 @@ class StateTree:
   	self.max_velocity_y=0.5
   	self.max_velocity_yaw= 0.5
 
-	self.step_velocity=0.001
+	self.step_velocity=0.01
 
 	self.max_accel=0.5
 	self.max_accel_yaw=1.0
@@ -72,6 +78,7 @@ class StateTree:
   def getAvailableActions(self,node):
   	q=node.robot
   	dt= get_time() - self.time
+  	
   	new_nodes=[]
   	#instead of this based on current velocity figure out which is acceptable
   	for v_x in np.arange(q.v_x-self.max_accel*dt,q.v_x+self.max_accel*dt,self.step_velocity):
@@ -85,7 +92,6 @@ class StateTree:
   					node.addChild(n)
 					new_nodes.append(n)
   	#check for collision
-
   	return new_nodes
 
   	
@@ -108,12 +114,11 @@ class StateTree:
   			return self.backtrace(current_node)
   		steps.append(self.Q.get())
   		L= self.getAvailableActions(steps[-1])
-  		print(L)
   		L.sort(self.compare)
 
   		for j in range(self.bmax if len(L)>self.bmax else len(L)):
   			if L[j].depth==self.dmax:
-  				if L[j].getUtility()>current_node.getUtility():
+  				if L[j].getUtility(self.p)>current_node.getUtility(self.p):
   					current_node=L[j]
   			else:
   				self.Q.put(L[j])
@@ -127,9 +132,14 @@ class StateTree:
   	pass
 
   def compare(self,a,b):
-  	print(a)
-  	print ("HII!!!")
-  	return -1
+  	a_utility=a.getUtility(self.p) 
+  	b_utility=b.getUtility(self.p)
+  	if a_utility>b_utility:
+  		return 1
+  	elif a_utility==b_utility:
+  		return 0
+  	else:
+  		return -1
   	
   	'''
   		Update the values in the tree by recreating the root

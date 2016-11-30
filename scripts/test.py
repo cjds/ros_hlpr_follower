@@ -4,6 +4,7 @@ This test file takes state information and displays it
 from StateTree import StateTree
 from Information import *
 from CollisionChecking import *
+import time
 error=0
 
 #new las
@@ -29,4 +30,5 @@ def predict_next_move():
 q=Information(1,2,0,1,0)
 c=CollisionChecking(1)
 st= StateTree(c)
+time.sleep(0.01)
 st.plan()
