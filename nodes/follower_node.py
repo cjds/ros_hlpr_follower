@@ -48,13 +48,16 @@ class follower_node:
     #people_positions.append([-0.478, 1.025, 0.000,0.000, 0.000, 0.991, -0.131])
     #people_positions.append([0.446, -0.392, 0.000,0.000, 0.000, -0.489, 0.872])
 
+
+    self.publish_period=5 #set to 1 for simulation
+    self.pid=0
     velocity=19.0
 
     size=velocity*(len(people_positions)-1)
     #frames
     self.radius= 1.0 #radius at which its considered acceptable to move
     #subscribers
-    self.image_teleop_sub = rospy.Subscriber("/person_tracker",PoseStamped,self.person_tracker_callback)
+    self.image_teleop_sub = rospy.Subscriber("/tracked_target",PoseStamped,self.person_tracker_callback)
     self.image_teleop_pub = rospy.Publisher("/person_tracker",PoseStamped,queue_size=10)
     self.visualization_marker_pub = rospy.Publisher("/person_display",Marker,queue_size=10)
 
@@ -85,6 +88,7 @@ class follower_node:
     r = rospy.Rate(5) # 10hz
     count=0
     while not rospy.is_shutdown():
+      self.pid+=1
       #new_pose=PoseStamped()
       #new_pose.header.frame_id='/map'
       #new_pose.header.stamp=rospy.Time.now()
@@ -126,14 +130,14 @@ class follower_node:
         #we want to be slightly right and behind the person (Henrik)
         pose.pose.position.x-=0.05
         pose.pose.position.y-=0.05      
-        move_base_navi.target_pose.header.frame_id='/map'
+        move_base_navi.target_pose.header.frame_id='map'
         move_base_navi.target_pose.header.stamp=rospy.Time.now()
 
         move_base_navi.target_pose.pose=pose.pose
         #move_base_navi.goal_id=1
-        self.client.send_goal(move_base_navi)
-
-        rospy.logwarn(str(self.client.get_result()))
+        if self.pid%self.publish_period==0:
+          self.client.send_goal(move_base_navi)
+          #rospy.logdebug(str(self.client.get_result()))
 
     else:
       rospy.logwarn("Cannot find the frame %s", data.header.frame_id)
