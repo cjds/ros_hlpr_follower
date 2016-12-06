@@ -56,12 +56,20 @@ class follower_node:
 
     velocity=80.0
     error_rate=0.05
-
+    time_band=8
     size=velocity*(len(people_positions)-1)
+
+
+
+    self.publish_period=5 #set to 1 for simulation
+    self.pid=0
+
+    self.simulation=False
+
     #frames
     self.radius= 1.5 #radius at which its considered acceptable to move
     #subscribers
-    self.image_teleop_sub = rospy.Subscriber("/person_tracker",PoseStamped,self.person_tracker_callback)
+    self.image_teleop_sub = rospy.Subscriber("/tracked_target",PoseStamped,self.person_tracker_callback)
     self.image_teleop_pub = rospy.Publisher("/person_tracker",PoseStamped,queue_size=10)
     self.visualization_marker_pub = rospy.Publisher("/person_display",Marker,queue_size=10)
 
@@ -92,30 +100,55 @@ class follower_node:
     r = rospy.Rate(10) # 10hz
     count=0
     while not rospy.is_shutdown():
-      new_pose=PoseStamped()
-      new_pose.header.frame_id='/map'
-      new_pose.header.stamp=rospy.Time.now()
-      if count < size:
-        new_pose.pose.position=positions[int(count%size)]
-        new_pose.pose.orientation=orientation[int(count%size)]
-        count+=1
-        skip_data=False
-        if random.random() > error_rate:
-          self.image_teleop_pub.publish(new_pose)
-          visualization_marker=Marker()
-          visualization_marker.header.frame_id='/map'
-          visualization_marker.header.stamp=rospy.Time.now()  
-          visualization_marker.type=1
-          visualization_marker.scale.x=0.2
-          visualization_marker.scale.y=0.2
-          visualization_marker.scale.z=0.2
-          visualization_marker.color.r=1.0
-          visualization_marker.color.a=1.0
-          visualization_marker.pose=new_pose.pose
-          visualization_marker.lifetime=rospy.Duration(5.0)
-          self.visualization_marker_pub.publish(visualization_marker)
-      else:
-        print(str(self.max_count)+"/"+str(self.total_count))
+      # new_pose=PoseStamped()
+      # new_pose.header.frame_id='/map'
+      # new_pose.header.stamp=rospy.Time.now()
+      # if count < size:
+      #   new_pose.pose.position=positions[int(count%size)]
+      #   new_pose.pose.orientation=orientation[int(count%size)]
+      #   count+=1
+      #   skip_data=False
+      #   if random.random() > error_rate:
+      #     self.image_teleop_pub.publish(new_pose)
+      #     visualization_marker=Marker()
+      #     visualization_marker.header.frame_id='/map'
+      #     visualization_marker.header.stamp=rospy.Time.now()  
+      #     visualization_marker.type=1
+      #     visualization_marker.scale.x=0.2
+      #     visualization_marker.scale.y=0.2
+      #     visualization_marker.scale.z=0.2
+      #     visualization_marker.color.r=1.0
+      #     visualization_marker.color.a=1.0
+      #     visualization_marker.pose=new_pose.pose
+      #     visualization_marker.lifetime=rospy.Duration(5.0)
+      #     self.visualization_marker_pub.publish(visualization_marker)
+      # else:
+      #   print(str(self.max_count)+"/"+str(self.total_count))
+
+      pose=self.pose
+      move_base_navi=MoveBaseGoal()
+
+      time_diff=rospy.get_time() - rospy.last_pose_time
+
+      self.x_vel=0.0
+      self.y_vel=0.0
+
+      if time_diff>time_band:
+        #randomly sample circular space around last pose
+        
+        pose.pose.position.x=pose.pose.position.x+(self.x_vel*(time_diff-time_band)*random.random())
+        pose.pose.position.y=pose.pose.position.y+(self.y_vel*(time_diff-time_band)*random.random())
+      
+      pose.pose.position.x-=0.5
+      pose.pose.position.y-=0.5      
+      move_base_navi.target_pose.header.frame_id='map'
+      move_base_navi.target_pose.header.stamp=rospy.Time.now()
+      move_base_navi.target_pose.pose=pose.pose
+            #move_base_navi.goal_id=1
+      self.client.send_goal(move_base_navi)
+
+          #rospy.logwarn(str(self.client.get_result()))
+      self.client.send_goal(move_base_navi)
 
       r.sleep()
 
@@ -133,25 +166,20 @@ class follower_node:
         self.max_count+=1
       self.total_count+=1
       #if robot is close enough don't move
-      if math.hypot(pose.pose.position.x,pose.pose.position.y) > self.radius:
+      
         #if pose is too different don't move
         #if @TODO
-
+        
+      self.x_vel=(self.pose.pose.x-pose.pose.x)/(rospy.get_time()-self.last_pose_time)
+      self.y_vel=(self.pose.pose.y-pose.pose.y)/(rospy.get_time()-self.last_pose_time)
+      self.pose=pose
+      self.last_pose_time=rospy.get_time()
         #we are not at the goal time to move there
-        move_base_navi=MoveBaseGoal()
 
         #we want to be slightly right and behind the person (Henrik)
-        pose.pose.position.x-=0.2
-        pose.pose.position.y-=0.2      
-        move_base_navi.target_pose.header.frame_id='/map'
-        move_base_navi.target_pose.header.stamp=rospy.Time.now()
-
-        move_base_navi.target_pose.pose=pose.pose
-        #move_base_navi.goal_id=1
-        self.client.send_goal(move_base_navi)
-
-        #rospy.logwarn(str(self.client.get_result()))
-
+               #if pose is too different don't move
+        #if @TODO
+          #rospy.logdebug(str(self.client.get_result()))
     else:
       rospy.logwarn("Cannot find the frame %s", data.header.frame_id)
 
