@@ -172,5 +172,4 @@ include_directories(ros_follower_node  ${catkin_INCLUDE_DIRS} ${OpenCV_INCLUDE_D
 catkin_install_python(PROGRAMS
     nodes/follower_node.py
     nodes/kinect_follower_node.py
-    nodes/target_reporter.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
